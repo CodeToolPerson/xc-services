@@ -74,15 +74,10 @@ sub exec()
         end if
         if result.superseded = true then
             clearResume(playlistId)
-            started = beginImport()
-            if started.ok <> true then
-                failImport(started.code, started.message)
-                return
-            end if
-            gen = started.gen
-            kindIndex = 0
-            catIndex = 0
-            saveResume(playlistId, gen, 0, 0)
+            message = result.message
+            if message = invalid or message = "" then message = "import_superseded"
+            failImport(409, message)
+            return
         else
             saveResume(playlistId, gen, result.kindIndex, result.catIndex)
             failImport(result.code, result.message)
