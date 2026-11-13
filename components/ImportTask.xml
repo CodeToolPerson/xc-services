@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="ImportTask" extends="Task">
+    <interface>
+        <field id="apiBaseUrl" type="string" />
+        <field id="authHeader" type="string" value="" />
+        <field id="deviceId" type="string" value="" />
+        <field id="playlistId" type="string" />
+        <field id="serverUrl" type="string" />
+        <field id="username" type="string" />
+        <field id="password" type="string" />
+        <field id="force" type="boolean" value="false" />
+        <field id="phase" type="string" value="" />
+        <field id="kind" type="string" value="" />
+        <field id="message" type="string" value="" />
+        <field id="progress" type="integer" value="0" />
+        <field id="liveProgress" type="integer" value="0" />
+        <field id="vodProgress" type="integer" value="0" />
+        <field id="seriesProgress" type="integer" value="0" />
+        <field id="counts" type="assocarray" />
+        <field id="statusCode" type="integer" value="0" />
+        <field id="errorMessage" type="string" value="" />
+        <field id="done" type="boolean" value="false" />
+    </interface>
+    <script type="text/brightscript" uri="ImportUtil.brs" />
+    <script type="text/brightscript" uri="ImportResume.brs" />
+    <script type="text/brightscript" uri="ImportHttp.brs" />
+    <script type="text/brightscript" uri="ImportUpload.brs" />
+    <script type="text/brightscript" uri="ImportTask.brs" />
+</component>
