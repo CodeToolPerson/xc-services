@@ -7,10 +7,12 @@ sub exec()
     serverUrl = trimText(m.top.serverUrl)
     username = trimText(m.top.username)
     password = trimText(m.top.password)
+    m3uUrl = trimText(m.top.m3uUrl)
     force = (m.top.force = true)
     apiBaseUrl = stripSlash(m.top.apiBaseUrl)
 
-    if playlistId = "" or serverUrl = "" or username = "" or password = "" or apiBaseUrl = "" then
+    xcReady = (serverUrl <> "" and username <> "" and password <> "")
+    if playlistId = "" or apiBaseUrl = "" or (m3uUrl = "" and xcReady <> true) then
         failImport(0, "Missing import parameters")
         return
     end if
@@ -19,11 +21,13 @@ sub exec()
     m.serverUrl = stripSlash(serverUrl)
     m.username = username
     m.password = password
+    m.m3uUrl = m3uUrl
     m.apiBaseUrl = apiBaseUrl
     m.authHeader = trimText(m.top.authHeader)
     m.deviceId = trimText(m.top.deviceId)
     m.kinds = ["live", "vod", "series"]
     m.cachePath = "tmp:/xc_" + playlistId + "_streams.json"
+    if m3uUrl <> "" then m.cachePath = "tmp:/m3u_" + playlistId + ".m3u"
     m.transferTimeoutMs = 600000
     m.panelRetries = 2
     deleteCacheFile(m.cachePath)
@@ -88,6 +92,7 @@ sub exec()
 end sub
 
 function runImport(gen as integer, startKind as integer, startCat as integer) as object
+    if m.m3uUrl <> "" then return runM3UImport(gen)
     kindIndex = startKind
     catIndex = startCat
     if kindIndex < 0 then kindIndex = 0
@@ -124,6 +129,31 @@ function runImport(gen as integer, startKind as integer, startCat as integer) as
         message: ""
         superseded: false
     }
+end function
+
+function runM3UImport(gen as integer) as object
+    path = m.cachePath
+    setProgress("streams", "live", "Fetching M3U playlist", 10, 0, 0, 0)
+    fetched = fetchM3UToFile(m.m3uUrl, path)
+    if fetched.ok <> true then
+        deleteCacheFile(path)
+        return failResult(fetched.code, fetched.message, 0, 0, false)
+    end if
+    setProgress("upload", "live", "Uploading M3U playlist", 60, 0, 0, 0)
+    uploaded = httpFile("POST", importUrl(importM3UPath(m.playlistId, gen)), path, true, "text/plain")
+    deleteCacheFile(path)
+    if uploaded.ok <> true then
+        return failResult(uploaded.code, uploaded.message, 0, 0, uploaded.superseded)
+    end if
+    setKindProgress("live", 100)
+    setKindProgress("vod", 100)
+    setKindProgress("series", 100)
+    setProgress("complete", "", "Finalizing import", 99, 100, 100, 100)
+    finished = completeImport(gen)
+    if finished.ok <> true then
+        return failResult(finished.code, finished.message, 0, 0, finished.superseded)
+    end if
+    return { ok: true, counts: finished.counts, kindIndex: 0, catIndex: 0, code: 200, message: "", superseded: false }
 end function
 
 function ensureCategories(gen as integer, kind as string, kindIndex as integer) as object

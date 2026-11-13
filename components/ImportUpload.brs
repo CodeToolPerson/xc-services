@@ -7,6 +7,19 @@ function uploadFile(path as string, filePath as string) as object
     return httpFile("POST", importUrl(path), filePath, true)
 end function
 
+function fileStartsWithM3U(path as string) as boolean
+    info = CreateObject("roFileSystem").Stat(path)
+    if info = invalid then return false
+    n = asInt(info.size)
+    if n <= 0 then return false
+    if n > 64 then n = 64
+    bytes = CreateObject("roByteArray")
+    if bytes.ReadFile(path, 0, n) <> true then return false
+    text = bytes.ToAsciiString()
+    if text = invalid then return false
+    return Instr(1, UCase(text), "#EXTM3U") > 0
+end function
+
 function fileEndsWithSquareBracket(path as string) as boolean
     fs = CreateObject("roFileSystem")
     info = fs.Stat(path)

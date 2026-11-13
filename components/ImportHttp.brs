@@ -21,6 +21,32 @@ function fetchPanelToFile(action as string, categoryId as string, filePath as st
     return transportFail("Bulk download failed")
 end function
 
+function fetchM3UToFile(url as string, filePath as string) as object
+    attempt = 0
+    last = invalid
+    while attempt < m.panelRetries
+        attempt = attempt + 1
+        deleteCacheFile(filePath)
+        last = httpGetToFile(url, filePath, false)
+        if last.ok = true and fileStartsWithM3U(filePath) <> true then
+            print "[ImportTask] m3u header missing"
+            return transportFail("Invalid M3U file")
+        end if
+        if last.ok = true and last.length > 0 then
+            info = CreateObject("roFileSystem").Stat(filePath)
+            if info = invalid or asInt(info.size) <> last.length then
+                print "[ImportTask] m3u file truncated"
+                last = transportFail("Incomplete M3U file")
+            end if
+        end if
+        if last.ok = true then return last
+        print "[ImportTask] m3u retry="; attempt; " code="; last.code; " "; last.message
+        sleep(600 * attempt)
+    end while
+    if last <> invalid then return last
+    return transportFail("M3U download failed")
+end function
+
 function httpRawRetry(method as string, url as string, body as string, withAuth as boolean) as object
     attempt = 0
     last = invalid
@@ -106,7 +132,7 @@ function httpGetToFile(url as string, filePath as string, withAuth as boolean) a
     return waitTransfer(xfer, port, true)
 end function
 
-function httpFile(method as string, url as string, filePath as string, withAuth as boolean) as object
+function httpFile(method as string, url as string, filePath as string, withAuth as boolean, contentType = "application/json" as string) as object
     xfer = CreateObject("roUrlTransfer")
     port = CreateObject("roMessagePort")
     xfer.SetMessagePort(port)
@@ -114,7 +140,7 @@ function httpFile(method as string, url as string, filePath as string, withAuth 
     xfer.InitClientCertificates()
     xfer.RetainBodyOnError(true)
     xfer.AddHeader("Accept", "application/json")
-    xfer.AddHeader("Content-Type", "application/json")
+    xfer.AddHeader("Content-Type", contentType)
     if withAuth = true then applyAuth(xfer)
     xfer.SetRequest(method)
     xfer.SetUrl(url)
@@ -156,10 +182,19 @@ function waitTransfer(xfer as object, port as object, fileOnly as boolean) as ob
         return { ok: false, code: code, message: message, superseded: superseded, body: raw, parsed: parsed }
     end if
     if fileOnly = true then
-        return { ok: true, code: code, message: "", superseded: false, body: "", parsed: invalid }
+        return { ok: true, code: code, message: "", superseded: false, body: "", parsed: invalid, length: headerLength(msg) }
     end if
     if raw = invalid or raw = "" then raw = "[]"
     return { ok: true, code: code, message: "", superseded: false, body: raw, parsed: parsed }
+end function
+
+function headerLength(msg as object) as integer
+    headers = msg.GetResponseHeaders()
+    if headers = invalid then return 0
+    for each key in headers
+        if LCase(key) = "content-length" then return asInt(headers[key])
+    end for
+    return 0
 end function
 
 sub applyAuth(xfer as object)
@@ -177,6 +212,10 @@ end function
 
 function importStreamsPath(playlistId as string, gen as integer, kind as string) as string
     return "/playlists/" + playlistId + "/import/" + gen.toStr() + "/streams/" + kind
+end function
+
+function importM3UPath(playlistId as string, gen as integer) as string
+    return "/playlists/" + playlistId + "/import/" + gen.toStr() + "/m3u"
 end function
 
 function importCompletePath(playlistId as string, gen as integer) as string

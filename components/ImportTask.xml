@@ -8,6 +8,7 @@
         <field id="serverUrl" type="string" />
         <field id="username" type="string" />
         <field id="password" type="string" />
+        <field id="m3uUrl" type="string" value="" />
         <field id="force" type="boolean" value="false" />
         <field id="phase" type="string" value="" />
         <field id="kind" type="string" value="" />
