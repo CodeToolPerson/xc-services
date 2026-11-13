@@ -23,7 +23,6 @@ sub exec()
     m.authHeader = trimText(m.top.authHeader)
     m.deviceId = trimText(m.top.deviceId)
     m.kinds = ["live", "vod", "series"]
-    ' cache:/ 约 20MB 就会 -10002，按播放列表分开，避免并发互相覆盖
     m.cachePath = "tmp:/xc_" + playlistId + "_streams.json"
     m.transferTimeoutMs = 600000
     m.panelRetries = 2
