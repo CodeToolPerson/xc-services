@@ -151,7 +151,7 @@ function importKindStreamsBulk(gen as integer, kind as string, kindIndex as inte
         return { ok: false, code: fetched.code, message: fetched.message, superseded: false }
     end if
     setProgress("upload", kind, "Uploading all " + kind + " streams", kindProgress(kindIndex, 60), progressFor("live"), progressFor("vod"), progressFor("series"))
-    uploaded = uploadStreamFile(importStreamsPath(m.playlistId, gen, kind), path)
+    uploaded = uploadFile(importStreamsPath(m.playlistId, gen, kind), path)
     deleteCacheFile(path)
     if uploaded.ok <> true then
         return { ok: false, code: uploaded.code, message: uploaded.message, superseded: uploaded.superseded }
