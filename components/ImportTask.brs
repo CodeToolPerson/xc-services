@@ -80,6 +80,7 @@ sub exec()
             return
         else
             saveResume(playlistId, gen, result.kindIndex, result.catIndex)
+            reportImportFailed(gen, result.message)
             failImport(result.code, result.message)
             return
         end if
@@ -175,7 +176,7 @@ function importKindStreamsBulk(gen as integer, kind as string, kindIndex as inte
         return { ok: false, code: fetched.code, message: fetched.message, superseded: false }
     end if
     setProgress("upload", kind, "Uploading all " + kind + " streams", kindProgress(kindIndex, 60), progressFor("live"), progressFor("vod"), progressFor("series"))
-    uploaded = uploadFile(importStreamsPath(m.playlistId, gen, kind), path)
+    uploaded = uploadStreamFile(importStreamsPath(m.playlistId, gen, kind), path)
     deleteCacheFile(path)
     if uploaded.ok <> true then
         return { ok: false, code: uploaded.code, message: uploaded.message, superseded: uploaded.superseded }
@@ -235,6 +236,10 @@ function failResult(code as integer, message as string, kindIndex as integer, ca
         counts: {}
     }
 end function
+
+sub reportImportFailed(gen as integer, message as string)
+    httpRaw("POST", importUrl(importFailPath(m.playlistId, gen)), FormatJson({ message: message }), true)
+end sub
 
 sub failImport(code as integer, message as string)
     if message = invalid then message = "Import failed"

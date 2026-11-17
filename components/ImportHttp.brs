@@ -222,6 +222,10 @@ function importCompletePath(playlistId as string, gen as integer) as string
     return "/playlists/" + playlistId + "/import/" + gen.toStr() + "/complete"
 end function
 
+function importFailPath(playlistId as string, gen as integer) as string
+    return "/playlists/" + playlistId + "/import/" + gen.toStr() + "/fail"
+end function
+
 function importUrl(path as string) as string
     return m.apiBaseUrl + path
 end function
